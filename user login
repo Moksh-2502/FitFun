@@ -1,0 +1,79 @@
+import pandas as pd
+
+# Dummy database to store user information (username as key, password as value)
+user_database = {}
+
+# Function to create a new user profile
+def create_user_profile():
+    print("Please enter your information to create a new user profile:")
+    name = input("Name: ")
+    age = int(input("Age: "))
+    gender = input("Gender (male/female): ")
+    goal = input("Goal (weight_loss/weight_gain/maintain): ")
+
+    # Store user information in a dictionary
+    user_profile = {
+        "Name": name,
+        "Age": age,
+        "Gender": gender,
+        "Goal": goal
+    }
+
+    return user_profile
+
+# Function to store user profile in a database
+def store_user_profile(username, password, user_profile):
+    user_database[username] = (password, user_profile)
+    print("User profile created and stored successfully.")
+
+# Function to check if a user exists in the database
+def user_exists(username):
+    return username in user_database
+
+# Function to authenticate a user
+def authenticate_user(username, password):
+    if username in user_database:
+        stored_password, _ = user_database[username]
+        return password == stored_password
+    else:
+        return False
+
+# Function to log in an existing user
+def login_user():
+    print("\nPlease log in to your account:")
+    username = input("Username: ")
+    password = input("Password: ")
+
+    if authenticate_user(username, password):
+        print("Login successful!")
+        return True
+    else:
+        print("Login failed. Please check your username and password.")
+        return False
+
+# Main program
+print("Welcome to the Health Management System!")
+
+# Check if the user is an existing user or a new user
+existing_user = input("Are you an existing user? (yes/no): ")
+
+if existing_user.lower() == "yes":
+    # Log in the existing user
+    logged_in = login_user()
+    if not logged_in:
+        print("Please sign up to create a new account.")
+else:
+    # Sign up a new user
+    username = input("Choose a username: ")
+    if user_exists(username):
+        print("Username already exists. Please choose a different username.")
+    else:
+        password = input("Choose a password: ")
+        confirm_password = input("Confirm your password: ")
+
+        if password == confirm_password:
+            print("Passwords match. Creating your account...")
+            user_profile = create_user_profile()
+            store_user_profile(username, password, user_profile)
+        else:
+            print("Passwords do not match. Please try again.")
