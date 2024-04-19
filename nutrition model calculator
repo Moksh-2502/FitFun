@@ -1,0 +1,115 @@
+import mysql.connector
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+def connect_to_database():
+    return mysql.connector.connect(
+        host="localhost",
+        user="your_username",
+        password="your_password",
+        database="your_database"
+    )
+
+def get_food_items():
+    try:
+        conn = connect_to_database()
+        cursor = conn.cursor()
+
+        select_query = "SELECT food_name FROM food_items"
+        cursor.execute(select_query)
+        food_items = cursor.fetchall()
+
+        return [item[0] for item in food_items]
+
+    except mysql.connector.Error as error:
+        print("Error retrieving food items:", error)
+        return []
+
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
+
+def calculate_intake(selected_food_items):
+    total_protein = 0
+    total_carbohydrate = 0
+
+    try:
+        conn = connect_to_database()
+        cursor = conn.cursor()
+
+        for food_item in selected_food_items:
+            select_query = "SELECT protein, carbohydrate FROM food_items WHERE food_name = %s"
+            cursor.execute(select_query, (food_item,))
+            result = cursor.fetchone()
+
+            if result:
+                total_protein += result[0]
+                total_carbohydrate += result[1]
+
+        return total_protein, total_carbohydrate
+
+    except mysql.connector.Error as error:
+        print("Error calculating intake:", error)
+        return 0, 0
+
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
+
+def train_model(data):
+    X = data[['Height', 'Weight', 'Age']]
+    y_protein = data['Protein_Goal']
+    y_carb = data['Carb_Goal']
+
+    model_protein = LinearRegression()
+    model_protein.fit(X, y_protein)
+
+    model_carb = LinearRegression()
+    model_carb.fit(X, y_carb)
+
+    return model_protein, model_carb
+
+def predict_intake(model, height, weight, age):
+    return model.predict([[height, weight, age]])
+
+print("Welcome to the Daily Food Intake Calculator!")
+
+# Get user input
+height = float(input("Enter your height in centimeters: "))
+weight = float(input("Enter your weight in kilograms: "))
+age = int(input("Enter your age in years: "))
+gender = input("Enter your gender (male/female): ")
+goal = input("Enter your goal (weight_loss/weight_gain/maintain): ")
+
+# Retrieve food items from the database
+food_items = get_food_items()
+
+print("Food items available:")
+for index, food_item in enumerate(food_items, start=1):
+    print(f"{index}. {food_item}")
+
+selected_indices = input("Enter the indices of the food items you consumed (separated by commas): ").split(",")
+selected_food_items = [food_items[int(index) - 1] for index in selected_indices]
+
+protein, carbohydrate = calculate_intake(selected_food_items)
+
+user_data = pd.DataFrame({
+    'Height': [height],
+    'Weight': [weight],
+    'Age': [age],
+    'Gender': [gender],
+    'Goal': [goal]
+})
+
+model_protein, model_carb = train_model(user_data)
+
+recommended_protein = predict_intake(model_protein, height, weight, age)
+recommended_carb = predict_intake(model_carb, height, weight, age)
+
+print("\nDaily Food Intake:")
+print("Total Protein Intake:", protein, "grams")
+print("Total Carbohydrate Intake:", carbohydrate, "grams")
+print("Recommended Protein Intake:", recommended_protein, "grams")
+print("Recommended Carbohydrate Intake:", recommended_carb, "grams")
