@@ -1,0 +1,75 @@
+import mysql.connector
+
+# Function to connect to the MySQL database
+def connect_to_database():
+    return mysql.connector.connect(
+        host="localhost",
+        user="your_username",
+        password="your_password",
+        database="your_database"
+    )
+
+# Function to add a new food item to the database (admin only)
+def add_food_item(food_name, protein, carbohydrate):
+    try:
+        conn = connect_to_database()
+        cursor = conn.cursor()
+
+        insert_query = "INSERT INTO food_items (food_name, protein, carbohydrate) VALUES (%s, %s, %s)"
+        food_data = (food_name, protein, carbohydrate)
+        cursor.execute(insert_query, food_data)
+        
+        conn.commit()
+        print("Food item added successfully.")
+
+    except mysql.connector.Error as error:
+        print("Error adding food item:", error)
+
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
+
+# Function to remove a food item from the database (admin only)
+def remove_food_item(food_name):
+    try:
+        conn = connect_to_database()
+        cursor = conn.cursor()
+
+        delete_query = "DELETE FROM food_items WHERE food_name = %s"
+        cursor.execute(delete_query, (food_name,))
+        
+        conn.commit()
+        print("Food item removed successfully.")
+
+    except mysql.connector.Error as error:
+        print("Error removing food item:", error)
+
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
+
+# Function to retrieve all food items from the database (accessible by all users)
+def get_food_items():
+    try:
+        conn = connect_to_database()
+        cursor = conn.cursor()
+
+        select_query = "SELECT * FROM food_items"
+        cursor.execute(select_query)
+        food_items = cursor.fetchall()
+
+        return food_items
+
+    except mysql.connector.Error as error:
+        print("Error retrieving food items:", error)
+        return []
+
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
+
+# Main program
+# Your existing code for user interaction remains unchanged
